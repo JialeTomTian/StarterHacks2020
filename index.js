@@ -1,162 +1,111 @@
 import React from 'react';
+
 import ReactDOM from 'react-dom';
 import './index.css';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import { Navbar } from 'react-bootstrap'
-import { Nav } from 'react-bootstrap'
-import { NavDropdown } from 'react-bootstrap'
+import AutomaticSlide from "./SlideShow"
+import FormControl from 'react-bootstrap/Form'
+import MyTab from "./NavBar"
+import 'firebase/auth';
+import RentalCard from "./rentals"
+import * as firebase from "firebase/app";
+import 'firebase/firebase-firestore'
+import 'firebase/auth';
+import 'firebase/firestore';
 
-import { Modal } from 'react-bootstrap'
-import { Button } from 'react-bootstrap'
-
-import Carousel from 'react-bootstrap/Carousel'
-import { useState } from 'react';
-
-import Image from 'react-bootstrap/Image'
-
-// pictures //
-
-import rOne from './pics/RoomOne.jpg'
-import rTwo from './pics/RoomTwo.jpg'
-import rThree from './pics/RoomThree.jpg'
-
-// pictures // 
+// importing NavBar //
 
 
-function MyTab () {
+// importing SlideShow//
+
+var db = firebase.firestore();
+var collectionRef = db.collection("test")
+
+
+
+class MainPage extends React.Component {
+    constructor() {
+        super()
+        this.state = {
+            intro: true,
+            search: false,
+            listings: undefined
+        }
+        this.searchClick = this.searchClick.bind(this)
+    }
+
+    searchClick() {
+        // this.mySetState()
+        this.rentalObects()
+        this.setState(prevState => {
+            return {
+                intro: false,
+                search: true
+            }
+    })}
+
+
+
+    // mySetState = () => {
+    //     this.setState(prevState => {
+    //         return {
+    //             listings: await this.rentalObects()
+    //         }
+    //     })}
+
+
+    rentalObects = () => { 
+        console.log("entering")
+        collectionRef.get({ source: "server" })
+            .then(value => value.docs)
+            .then((docs) => {
+                return docs.map(doc => doc.id);
+            })
+            .then((docIds) => {
+                var docPromises = docIds.map((docId) => {
+                    var docRef = collectionRef.doc(docId);
+                    return docRef.get({ source: 'server' });
+                });
+                return Promise.all(docPromises);
+            })
+            .then((docObjs) => {
+                return docObjs.map(doc => doc.data())
+            }).then((listings => {
+                console.log(listings)
+                this.setState (prev =>{
+                    return{
+                        listings: (listings.map(listing => <RentalCard address={listing.Address} descriptions={listing.Descriptions} email={listing.Email} style={{display:"inline"}} />))
+                }
+            }
+                )}))}
+
+
+
+render() {
     return (
-<Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
-  <Navbar.Brand href="#home">Rental Name</Navbar.Brand>
-  <Navbar.Toggle aria-controls="responsive-navbar-nav" />
-  <Navbar.Collapse id="responsive-navbar-nav">
-    <Nav className="mr-auto">
-      <Nav.Link href="#features">Features</Nav.Link>
-      <Nav.Link href="#pricing">Pricing</Nav.Link>
-      <NavDropdown title="Dropdown" id="collasible-nav-dropdown">
-        <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
-        <NavDropdown.Item href="#action/3.2">Another action</NavDropdown.Item>
-        <NavDropdown.Item href="#action/3.3">Something</NavDropdown.Item>
-        <NavDropdown.Divider />
-        <NavDropdown.Item href="#action/3.4">Separated link</NavDropdown.Item>
-      </NavDropdown>
-    </Nav>
-    <Nav>
-      <Nav.Link href="#deets">Replace with Search Bar</Nav.Link>
-      <Nav.Link onClick="Example()" id="clicker">
-        Jilao Login
-      </Nav.Link>
-    </Nav>
-  </Navbar.Collapse>
-</Navbar>
-    )
+        <>
+            <div style={{ display: this.state.intro ? 'block' : 'none' }}>
+                <AutomaticSlide />
+                <div class="box">
+                    <button style={{ backgroundColor: "Transparent", border: "none", }} onClick={this.searchClick}>
+                        <a href="#" class="btn btn-white btn-animation-1 bold">View Sublets</a>
+                    </button>
+                </div>
+            </div>
+
+            <div style={{ display: this.state.search ? 'block' : 'none' }}>
+                {this.state.listings}
+            </div>
+        </>);
+}
 }
 
 
-
-function Example() {
-    const [show, setShow] = React.useState(false);
-  
-    const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
-  
-    return (
-      <>
-        <Button variant="primary" onClick={handleShow} id="Modal">
-          Login
-        </Button>
-  
-        <Modal show={show} onHide={handleClose}>
-          <Modal.Header closeButton>
-            <Modal.Title>Modal heading</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>Woohoo, you're reading this text in a modal!</Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={handleClose}>
-              Close
-            </Button>
-            <Button variant="primary" onClick={handleClose}>
-              Save Changes
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      </>
-    );
-  }
-
-
-function AutomaticSlide() {
-  const [index, setIndex] = useState(0);
-  const [direction, setDirection] = useState(null);
-  
-  const handleSelect = (selectedIndex, e) => {
-    setIndex(selectedIndex);
-    setDirection(e.direction);
-  };
-  
-  return (
-    <div class="c-wrapper">
-    <Carousel activeIndex={index} direction={direction} onSelect={handleSelect}>
-      <Carousel.Item>
-        <img
-          src = {rOne}
-          alt="Slide One"
-          width="100%"
-          height="60%"
-        />
-        <Carousel.Caption>
-          <h3>First slide label</h3>
-          <p>Nulla vitae elit libero, a pharetra augue mollis interdum.</p>
-        </Carousel.Caption>
-      </Carousel.Item>
-      <Carousel.Item>
-        <img
-          className="d-block w-100"
-          src={rTwo}
-          alt="Second slide"
-          width="60%"
-          height="60%"   
-        />
-  
-        <Carousel.Caption>
-          <h3>Second slide label</h3>
-          <p>Why no Work</p>
-        </Carousel.Caption>
-      </Carousel.Item>
-      <Carousel.Item>
-        <img
-          className="d-block w-100"
-          src = {rThree}
-          alt="Third slide"
-          width="60%"
-          height="60%%"   
-        />
-        <Carousel.Caption>
-          <h3>Third slide label</h3>
-          <p>
-            Praesent commodo cursus magna, vel scelerisque nisl consectetur.
-          </p>
-        </Carousel.Caption>
-      </Carousel.Item>
-    </Carousel>
-    </div>
-  );
-}
-
-ReactDOM.render(<AutomaticSlide />, document.getElementById("SlideShow"));
-  
-
-
-function ViewButton() {
-  return (  
-    <div class="box">
-    <a href="#" class="btn btn-white btn-animation-1 bold">View Sublets</a> 
-  </div>
-
-)}
-
-
-ReactDOM.render(<ViewButton />, document.getElementById("ViewButton"));
 ReactDOM.render(<MyTab />, document.getElementById("NavBar"));
-ReactDOM.render(<Example />, document.getElementById("Login"));
+ReactDOM.render(<MainPage />, document.getElementById("SlideShow"));
+
+
+ReactDOM.render(<MyTab />, document.getElementById("NavBar"));
+ReactDOM.render(<MainPage />, document.getElementById("SlideShow"));
